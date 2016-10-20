@@ -1,66 +1,1 @@
-package com.practice.android.moviehelper;
-
-import android.content.Context;
-import android.net.Uri;
-import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.GridView;
-import android.widget.Toast;
-
-
-public class MovieGridFragment extends Fragment {
-
-    private Integer[] mThumbIds = {
-            R.drawable.sample_2, R.drawable.sample_3,
-            R.drawable.sample_4, R.drawable.sample_5,
-            R.drawable.sample_6, R.drawable.sample_7,
-            R.drawable.sample_0, R.drawable.sample_1,
-            R.drawable.sample_2, R.drawable.sample_3,
-            R.drawable.sample_4, R.drawable.sample_5,
-            R.drawable.sample_6, R.drawable.sample_7,
-            R.drawable.sample_0, R.drawable.sample_1,
-            R.drawable.sample_2, R.drawable.sample_3,
-            R.drawable.sample_4, R.drawable.sample_5,
-            R.drawable.sample_6, R.drawable.sample_7
-    };
-
-    public MovieGridFragment() {
-        // Required empty public constructor
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        View rootView = inflater.inflate(R.layout.fragment_movie_grid, container, false);
-
-        GridView mGridView = (GridView)rootView.findViewById(R.id.moviegridview);
-        ImageAdapter movieGridAdapter = new ImageAdapter(getActivity());
-
-        for(int i = 0; i < mThumbIds.length; i++){
-            movieGridAdapter.add(mThumbIds[i]);
-        }
-
-        mGridView.setAdapter(movieGridAdapter);
-
-        mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                //TODO: open a new detail activity
-
-                Toast.makeText(getActivity(), "" + position,
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        FetchMovies movieTask = new FetchMovies();
-
-        movieTask.doInBackground();
-
-        return rootView;
-    }
-}
+package com.practice.android.moviehelper;import android.content.Context;import android.graphics.Bitmap;import android.graphics.BitmapFactory;import android.net.Uri;import android.os.AsyncTask;import android.os.Bundle;import android.support.annotation.Nullable;import android.support.v4.app.Fragment;import android.util.Log;import android.view.LayoutInflater;import android.view.View;import android.view.ViewGroup;import android.widget.AdapterView;import android.widget.GridView;import android.widget.Toast;import org.json.JSONArray;import org.json.JSONException;import org.json.JSONObject;import java.io.BufferedReader;import java.io.IOException;import java.io.InputStream;import java.io.InputStreamReader;import java.net.HttpURLConnection;import java.net.URL;import java.util.ArrayList;public class MovieGridFragment extends Fragment {        private ArrayList<String> posterUrls;//updated in FetchMovieTask    ImageAdapter movieGridAdapter;    GridView mGridView;    public MovieGridFragment() {        // Required empty public constructor        }    @Override    public void onCreate(@Nullable Bundle savedInstanceState) {        super.onCreate(savedInstanceState);    }    @Override    public void onAttach(Context context) {        super.onAttach(context);        movieGridAdapter = new ImageAdapter(context);    }    @Override    public void onStart() {        super.onStart();    }    @Override    public View onCreateView(LayoutInflater inflater, ViewGroup container,                             Bundle savedInstanceState) {        // Inflate the layout for this fragment        View rootView = inflater.inflate(R.layout.fragment_movie_grid, container, false);        mGridView = (GridView)rootView.findViewById(R.id.moviegridview);        FetchMovies movieTask = new FetchMovies();        movieTask.execute();        return rootView;    }    private void updateImages (){        FetchImageTask fetchImages = new FetchImageTask();        fetchImages.execute(posterUrls);        //mGridView.setAdapter(movieGridAdapter);    }    private class FetchImageTask extends AsyncTask<ArrayList<String>, Void, ArrayList<Bitmap>> {        private final String BASE_URL = "https://image.tmdb.org/t/p/w500";        private final String LOG_TAG = FetchImageTask.class.getSimpleName();               @Override        protected ArrayList<Bitmap> doInBackground(ArrayList<String>... params) {            ArrayList<Bitmap> bmp = new ArrayList<>();            for(int i = 0; i < params[0].size(); i++) {                Bitmap map = null;                try {                    URL url = new URL(BASE_URL + params[0].get(i));                    map = BitmapFactory.decodeStream(url.openConnection().getInputStream());                } catch (IOException e) {                    Log.e(LOG_TAG, "Error: ", e);                    return null;                } finally {                    bmp.add(map);                }            }            return bmp;        }        @Override        protected void onPostExecute(ArrayList<Bitmap> bmp) {            super.onPostExecute(bmp);            movieGridAdapter.clear();            for(int i = 0; i < bmp.size(); i++){                movieGridAdapter.add(bmp.get(i));            }            mGridView.setAdapter(movieGridAdapter);            mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {                @Override                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {                    //TODO: open a new detail activity                    Toast.makeText(getActivity(), "" + position,                            Toast.LENGTH_SHORT).show();                }            });        }    }    private class FetchMovies extends AsyncTask<Void, Void, String> {        private final String LOG_TAG = FetchMovies.class.getSimpleName();        private final String BASE_URL = "https://api.themoviedb.org/3/discover/movie?";        private String mApi_key = "3d04589b5c416163f71c3d8ef4c97301";        private String mLanguage = "en-US";        private String mSort_by = "popularity.desc";        private boolean mInclude_adult = false;        private boolean mInclude_video = false;        private int mPage = 1;        public ArrayList<String> parse(String jsonStr) throws JSONException {            ArrayList<String> paths = new ArrayList<>();            JSONObject response = new JSONObject(jsonStr);            JSONArray results = response.getJSONArray("results");            for(int i = 0; i < results.length(); i++){                JSONObject movie = results.getJSONObject(i);                paths.add(movie.getString("poster_path"));            }            return paths;        }        @Override        protected void onPostExecute(String jsonStr) {            super.onPostExecute(jsonStr);            try{                posterUrls = parse(jsonStr);            }catch(JSONException e){                Log.e(LOG_TAG, "Error parsing JSON ", e);            }            updateImages();        }        @Override        protected String doInBackground(Void... params) {            BufferedReader reader = null;            HttpURLConnection urlConnection = null;            try {                Uri path = Uri.parse(BASE_URL).buildUpon()                        .appendQueryParameter("api_key", mApi_key)                        .appendQueryParameter("language", mLanguage)                        .appendQueryParameter("sort_by", mSort_by)                        .appendQueryParameter("include_adult", Boolean.toString(mInclude_adult))                        .appendQueryParameter("include_video", Boolean.toString(mInclude_video))                        .appendQueryParameter("page", Integer.toString(mPage))                        .build();                Log.v("FetchMovies", path.toString());                URL url = new URL(path.toString());                urlConnection = (HttpURLConnection)url.openConnection();                urlConnection.setRequestMethod("GET");                urlConnection.connect();                InputStream inputStream = urlConnection.getInputStream();                StringBuffer buffer = new StringBuffer();                if(inputStream == null)                    return null;                reader = new BufferedReader(new InputStreamReader(inputStream));                String line;                while((line = reader.readLine()) != null){                    buffer.append(line+"\n");                }                if(buffer.length() == 0){                    return null;                }                String mJsonResponse = buffer.toString();                return mJsonResponse;            }            catch(IOException e) {                Log.e(LOG_TAG, "Error ", e);                return null;// no point in attempting to parse movie data                // if the code didn't successfully retrieve it.            }            finally{                if(urlConnection != null){                    urlConnection.disconnect();                }                if(reader != null){                    try {                        reader.close();                    }catch(final IOException e){                        Log.e(LOG_TAG, "Error closing reader: ", e);                    }                }            }        }    }}
