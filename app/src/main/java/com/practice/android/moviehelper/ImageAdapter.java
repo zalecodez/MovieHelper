@@ -26,7 +26,7 @@ public class ImageAdapter extends BaseAdapter {
 
     private final String LOG_TAG = ImageAdapter.class.getSimpleName();
     private Context mContext;
-    private LinkedList<Bitmap> mThumbBits = new LinkedList<>();
+    private LinkedList<MovieDetail> mMovies = new LinkedList<>();
 
 
 
@@ -34,19 +34,19 @@ public class ImageAdapter extends BaseAdapter {
         mContext=c;
     }
 
-    public void add(Bitmap map){
-        mThumbBits.add(map);
+    public void add(MovieDetail movie){
+        mMovies.add(movie);
     }
 
     public void clear(){
-        mThumbBits.clear();
+        mMovies.clear();
     }
     public int getCount(){
-        return mThumbBits.size();
+        return mMovies.size();
     }
 
     public Object getItem(int position){
-        return mThumbBits.get(position);
+        return mMovies.get(position);
     }
 
     public long getItemId(int position){
@@ -60,7 +60,7 @@ public class ImageAdapter extends BaseAdapter {
         if(convertView == null) {
             //if it's not recycled, initialize some attributes
             imageView = new ImageView(mContext);
-            imageView.setLayoutParams(new GridView.LayoutParams(300, 300));
+            imageView.setLayoutParams(new GridView.LayoutParams(300, 500));
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
             imageView.setPadding(8, 8, 8, 8);
         }
@@ -68,7 +68,7 @@ public class ImageAdapter extends BaseAdapter {
             imageView = (ImageView) convertView;
         }
 
-        imageView.setImageBitmap(mThumbBits.get(position));
+        imageView.setImageBitmap(mMovies.get(position).getThumbnail());
         return imageView;
     }
 }
