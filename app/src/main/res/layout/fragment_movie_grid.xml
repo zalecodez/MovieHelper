@@ -5,6 +5,7 @@
              tools:context="com.practice.android.moviehelper.MovieGridFragment"
     android:id="@+id/frame">
 
+
     <GridView
         android:id="@+id/moviegridview"
         android:layout_width="match_parent"

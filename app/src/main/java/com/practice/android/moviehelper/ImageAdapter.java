@@ -24,10 +24,9 @@ import static android.support.v7.appcompat.R.styleable.View;
 
 public class ImageAdapter extends BaseAdapter {
 
+    private final String LOG_TAG = ImageAdapter.class.getSimpleName();
     private Context mContext;
-    private LinkedList<String> mThumbUrls = new LinkedList<>();
-    private LinkedList<Bitmap> mThumbBits = new LinkedList<>();
-    //private LinkedList<Long> mThumbIds = new LinkedList<>();
+    private LinkedList<MovieDetail> mMovies = new LinkedList<>();
 
 
 
@@ -35,22 +34,19 @@ public class ImageAdapter extends BaseAdapter {
         mContext=c;
     }
 
-    public void add(String url){
-        mThumbUrls.add(url);
-        FetchImageTask fetchImage = new FetchImageTask();
-        fetchImage.execute(url);
+    public void add(MovieDetail movie){
+        mMovies.add(movie);
     }
 
     public void clear(){
-        mThumbUrls.clear();
+        mMovies.clear();
     }
     public int getCount(){
-        return mThumbUrls.size();
+        return mMovies.size();
     }
 
     public Object getItem(int position){
-        ImageView img = new ImageView(mContext);
-        return mThumbUrls.get(position);
+        return mMovies.get(position);
     }
 
     public long getItemId(int position){
@@ -64,46 +60,15 @@ public class ImageAdapter extends BaseAdapter {
         if(convertView == null) {
             //if it's not recycled, initialize some attributes
             imageView = new ImageView(mContext);
-            imageView.setLayoutParams(new GridView.LayoutParams(300, 300));
+            imageView.setLayoutParams(new GridView.LayoutParams(300, 500));
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
             imageView.setPadding(8, 8, 8, 8);
-            imageView.setImageBitmap(mThumbBits.get(position));
         }
         else{
             imageView = (ImageView) convertView;
         }
-        imageView.setImageResource(position);
 
+        imageView.setImageBitmap(mMovies.get(position).getThumbnail());
         return imageView;
     }
-
-
-    public class FetchImageTask extends AsyncTask<String, Void, Bitmap> {
-
-        private final String BASE_URL = "https://image.tmdb.org/t/p/w500/";
-        private final String LOG_TAG = FetchImageTask.class.getSimpleName();
-        @Override
-        protected Bitmap doInBackground(String... params) {
-            Bitmap bmp = null;
-
-            try {
-                URL url = new URL(BASE_URL + params[0]);
-                bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-            }catch(IOException e){
-                Log.e(LOG_TAG, "Error: ", e);
-                return null;
-            }
-            finally{
-                return bmp;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Bitmap bmp) {
-            super.onPostExecute(bmp);
-            mThumbBits.add(bmp);
-
-        }
-    }
-
 }
